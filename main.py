@@ -1,25 +1,26 @@
-import torch
-from transformers import LightOnOcrForConditionalGeneration, LightOnOcrProcessor
+import ollama
+import requests
+from io import BytesIO
 
-device = "mps" if torch.backends.mps.is_available() else "cuda" if torch.cuda.is_available() else "cpu"
-dtype = torch.float32 if device == "mps" else torch.bfloat16
-
-model = LightOnOcrForConditionalGeneration.from_pretrained("lightonai/LightOnOCR-2-1B-base", torch_dtype=dtype).to(device)
-processor = LightOnOcrProcessor.from_pretrained("lightonai/LightOnOCR-2-1B-base")
-
+# 1. The image URL
 url = "https://huggingface.co/datasets/hf-internal-testing/fixtures_ocr/resolve/main/SROIE-receipt.jpeg"
-conversation = [{"role": "user", "content": [{"type": "image", "url": url}]}]
 
-inputs = processor.apply_chat_template(
-    conversation,
-    add_generation_prompt=True,
-    tokenize=True,
-    return_dict=True,
-    return_tensors="pt",
-)
-inputs = {k: v.to(device=device, dtype=dtype) if v.is_floating_point() else v.to(device) for k, v in inputs.items()}
+# 2. Download the image into memory
+response = requests.get(url)
+if response.status_code == 200:
+    image_bytes = response.content
+    
+    # 3. Use Ollama to process the OCR task
+    # Note: Ensure you have a vision-capable model pulled (e.g., 'llama3.2-vision' or 'llava')
+    res = ollama.chat(
+        model='maternion/LightOnOCR-2',
+        messages=[{
+            'role': 'user',
+            'content': 'Please extract all the text from this receipt and format it as JSON.',
+            'images': [image_bytes]
+        }]
+    )
 
-output_ids = model.generate(**inputs, max_new_tokens=1024)
-generated_ids = output_ids[0, inputs["input_ids"].shape[1]:]
-output_text = processor.decode(generated_ids, skip_special_tokens=True)
-print(output_text)
+    print(res['message']['content'])
+else:
+    print("Failed to retrieve the image.")
