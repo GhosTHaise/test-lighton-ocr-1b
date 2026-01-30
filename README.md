@@ -44,6 +44,7 @@ cd test-lighton-ocr-1b
 2. **Run the script**:
 ```bash
 uv run main.py
+uv run pdf.py
 
 ```
 
