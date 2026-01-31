@@ -1,6 +1,6 @@
 
 
-# test-lighton-ocr-1b 🚀
+# Test lighton-ocr-1b model 🚀
 
 A lightweight, local OCR pipeline designed to convert PDF documents into structured JSON data. This project leverages the **LightOn-OCR-1B** model running on **Ollama** for high-accuracy text extraction without data leaving your machine.
 
